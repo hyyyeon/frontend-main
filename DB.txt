@@ -49,3 +49,9 @@ CREATE TABLE `diary` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `diary_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE
 ) 
+
+-- 사진저장
+USE souldiary;
+
+ALTER TABLE `user`
+ADD COLUMN `profile_picture` VARCHAR(255);
