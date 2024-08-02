@@ -1,4 +1,4 @@
-// src/api/api.js
+// api.js
 import axios from 'axios';
 
 const API_URL = process.env.API_URL || 'http://localhost:3011';
@@ -191,5 +191,22 @@ export const fetchStickerCategories = async (token) => {
     return response.data.categories;
   } catch (error) {
     handleError('스티커 카테고리 조회 중 오류가 발생했습니다.', error);
+  }
+};
+
+
+// 프로필 사진 업로드
+export const uploadProfilePicture = async (formData, token) => {
+  try {
+    const response = await axios.post(`${API_URL}/upload-profile-picture`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('프로필 사진 업로드 중 오류가 발생했습니다.', error);
+    throw error;
   }
 };

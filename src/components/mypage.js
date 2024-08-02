@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchUserInfo, changePassword } from './api/api'; 
+import axios from 'axios';
 
 const MyPage = () => {
   const [user, setUser] = useState(null);
@@ -7,6 +8,7 @@ const MyPage = () => {
   const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [profilePicture, setProfilePicture] = useState(null);  // 프로필 사진 상태 추가
 
   useEffect(() => {
     const getUserInfo = async () => {
@@ -59,6 +61,45 @@ const MyPage = () => {
     }
   };
 
+  const handleProfilePictureChange = (e) => {
+    setProfilePicture(e.target.files[0]);
+  };
+
+  const uploadProfilePicture = async () => {
+    if (!profilePicture) {
+      alert("프로필 사진을 선택하세요.");
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('profilePicture', profilePicture);
+
+    try {
+      const response = await axios.post('http://localhost:3011/upload-profile-picture', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.data.isSuccess) {
+        alert("프로필 사진이 변경되었습니다.");
+        setUser({ ...user, profilePicture: response.data.profilePicture });
+      } else {
+        alert("프로필 사진 변경 중 오류가 발생했습니다.");
+      }
+    } catch (error) {
+      console.error("프로필 사진 변경 중 오류가 발생했습니다.", error);
+      alert("프로필 사진 변경 중 오류가 발생했습니다.");
+    }
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -78,7 +119,7 @@ const MyPage = () => {
           <h1 className="sec-main">My Page</h1>
           <div className="sec-img">
             <img
-              src={process.env.PUBLIC_URL + "/img/mypage.png"}
+              src={user.profilePicture || process.env.PUBLIC_URL + "/img/mypage.png"}
               alt="mypage"
             />
           </div>
@@ -98,6 +139,13 @@ const MyPage = () => {
               </tr>
             </tbody>
           </table>
+
+          <div className="profile-picture-change">
+            <h3>프로필 사진 변경</h3>
+            <input type="file" accept="image/*" onChange={handleProfilePictureChange} />
+            <button onClick={uploadProfilePicture}>Upload Profile Picture</button>
+          </div>
+
           <div className="password-change">
             <h3>비밀번호 변경</h3>
             <input

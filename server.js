@@ -6,6 +6,9 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const port = process.env.PORT || 3011;
@@ -32,6 +35,30 @@ const dbConfig = {
 };
 
 const pool = mysql.createPool(dbConfig);
+
+
+// 정적 파일 제공
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Multer 설정
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname)); // 파일 이름을 고유하게 설정
+  }
+});
+const upload = multer({ 
+  storage: storage, 
+  limits: { fileSize: 5 * 1024 * 1024 } // 파일 크기를 5MB로 제한
+});
+
+//디렉토리 생성: 만약 uploads/ 디렉토리가 없으면 서버 시작 시점에 해당 디렉토리를 생성할 수 있습니다.
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
 
 // JWT 인증 미들웨어
 const authenticateToken = (req, res, next) => {
@@ -323,6 +350,22 @@ app.get('/api/calendar', authenticateToken, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// 프로필 사진 업로드 엔드포인트
+app.post('/upload-profile-picture', authenticateToken, upload.single('profilePicture'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ isSuccess: false, message: '파일이 전송되지 않았습니다.' });
+    }
+
+// 파일 처리 후 응답
+res.json({ isSuccess: true, profilePicture: req.file.path });
+} catch (error) {
+  console.error('파일 업로드 중 오류 발생:', error);
+  res.status(500).json({ isSuccess: false, message: '파일 업로드 중 오류가 발생했습니다.' });
+}
+});
+
 
 // 서버 시작
 app.listen(port, () => {
